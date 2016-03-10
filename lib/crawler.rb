@@ -18,7 +18,7 @@ class Crawler
 
       loop do
         begin
-          url = "http://list.jd.com/list.html?cat=#{auction.code}&sort=sort_totalsales&delivery=1&page=#{page_num}"
+          url = "http://list.jd.com/list.html?cat=#{auction.code}&sort=sort_commentcount_desc&delivery=1&page=#{page_num}"
           page = get url
           docs = page.search("#plist .gl-item")
           return nil if page_num > page.search("#J_topPage i").text.to_i
