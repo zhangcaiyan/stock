@@ -13,3 +13,11 @@ puts logs
 2:
 
 zero_auctions = Auction.all.select{|a| ImportAuction.where(category: a.category, children_category: a.name).count.zero?}
+
+
+
+
+
+rake export:sku   抓取数据并且输出excel表
+Crawler.start  抓取数据
+ImportAuction.export    输出excel表
