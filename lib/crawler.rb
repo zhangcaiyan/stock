@@ -3,70 +3,37 @@ class Crawler
   class << self
 
     def start
-      # url = "http://dc.3.cn/category/get?callback=getCategoryCallback"
-      # page = $agent.get url
-      # data = JSON.parse page.body.gsub("getCategoryCallback(", '').gsub(/\)$/, '')
-      Auction.all.each do |auction|
-        crawler_auctions(auction)
-      end
-
-    end
-
-    def crawler_auctions(auction)
+      url = "http://data.eastmoney.com/xg/xg/default.html"
       page_num = 1
-      @@auction_num = ImportAuction.where(category: auction.category, children_category: auction.children_category).count
-
       loop do
+        url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=NS&sty=NSST&st=12&sr=-1&js=var%20bqiUVbDT={pages:(pc),data:[(x)]}&stat=1&rt=48589302&ps=50&p=#{page_num}"
         begin
-          url = "http://list.jd.com/list.html?cat=#{auction.code}&sort=sort_commentcount_desc&delivery=1&page=#{page_num}"
-          page = get url
-          docs = page.search("#plist .gl-item")
-          return nil if page_num > page.search("#J_topPage i").text.to_i
-          puts "***********************#{auction.children_category}: 第#{page_num}页*****************************"
-          docs.each do |doc|
-            return nil if @@auction_num >= auction.quantity
-            auction_url = doc.search(".p-name a").first.attributes["href"].value
-            crawler_auction(auction_url, auction)
+          content = get(url).to_s
+          stocks = eval(content.match(/\[.*\]/).to_s).collect{|stock| stock.split(",")}
+          stocks.each do |stock|
+            stock_code = stock[4]
+            stock_name = stock[3]
+            purchase_code = stock[5]
+            purchase_at = stock[11]
+            issue_price = stock[10].present? ? stock[10] : stock[34]
+            return nil if purchase_at.to_date <= Date.current
           end
-        rescue
+          url = "http://data.eastmoney.com/xg/xg/detail/603861.html"
+          page = get url
+          page.search("#tr_zqh") #中奖手机号
+
           puts "***********************#{url}报异常*****************************"
         end
         page_num += 1
       end
+
     end
 
-    def crawler_auction(auction_url, auction)
-      begin
-        page = get auction_url
-        img_text = page.search("#preview img").first.attributes["src"].value
-        name = page.search("#preview img").first.attributes["alt"].value
-        category = auction.category
-        children_category = auction.children_category
-        # sku = page.search("#short-share .fl span").last.text
-        import_id = auction_url.match(/\d+(?=\.html)/).to_s
-        sku = import_id # 商品编号就是商品ID
-        img = img_text.start_with?("http") ? img_text : "http:#{img_text}"
-        import_auction = ImportAuction.find_or_initialize_by(import_id: import_id)
-
-        if import_auction.new_record?
-          import_auction.category = category
-          import_auction.children_category = children_category
-          import_auction.name = name
-          import_auction.sku = sku
-          import_auction.img = img
-          if import_auction.save!
-            @@auction_num += 1
-          end
-        end
-      rescue
-        puts "***********************#{auction_url}报异常*****************************"
-      end
-    end
 
     def get(url, times = 0)
       times += 1
       begin
-        $agent.get url
+        Nokogiri::HTML(open(url).read)
       rescue
         get(url, times) if times < 6
       end
