@@ -1,4 +1,4 @@
-auctions = Auction.all.select{|a| a.quantity != ImportAuction.where(category: a.category, children_category: a.name).count}
+auctions = Auction.all.select{|a| a.quantity != ImportAuction.where(category: a.category, children_category: a.children_category).count}
 
 
 1:

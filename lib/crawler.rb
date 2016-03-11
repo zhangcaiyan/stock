@@ -46,15 +46,17 @@ class Crawler
         import_id = auction_url.match(/\d+(?=\.html)/).to_s
         sku = import_id # 商品编号就是商品ID
         img = img_text.start_with?("http") ? img_text : "http:#{img_text}"
-        import_auction = ImportAuction.find_or_initialize_by(import_id: import_id, category: category, children_category: children_category)
-        is_new_record = import_auction.new_record?
-        import_auction.category = category
-        import_auction.children_category = children_category
-        import_auction.name = name
-        import_auction.sku = sku
-        import_auction.img = img
-        if import_auction.save!
-          @@auction_num += 1 if is_new_record
+        import_auction = ImportAuction.find_or_initialize_by(import_id: import_id)
+
+        if import_auction.new_record?
+          import_auction.category = category
+          import_auction.children_category = children_category
+          import_auction.name = name
+          import_auction.sku = sku
+          import_auction.img = img
+          if import_auction.save!
+            @@auction_num += 1
+          end
         end
       rescue
         puts "***********************#{auction_url}报异常*****************************"

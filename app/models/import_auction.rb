@@ -1,7 +1,7 @@
 class ImportAuction < ActiveRecord::Base
 
   validates_presence_of :category, :children_category, :name, :sku, :img, :import_id
-  validates :import_id, uniqueness: {scope: [:category, :children_category]}
+  validates :import_id, uniqueness: true
 
   def self.export
     export_book = Spreadsheet::Workbook.new
